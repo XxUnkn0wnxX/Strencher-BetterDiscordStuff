@@ -1,8 +1,8 @@
-import React from "react";
-import { Data, Webpack, UI } from "@api";
-import { Manifest } from "@manifest";
-
 import "./style.scss";
+
+import { Data, UI, Webpack } from "@api";
+import { Manifest } from "@manifest";
+import React from "react";
 
 interface I18n {
     getLocale: () => string;
@@ -10,6 +10,7 @@ interface I18n {
 
 export default function showChangelog(manifest: Manifest) {
     if (Data.load("lastVersion") === manifest.version) return;
+    if (!manifest.changelog.length) return;
 
     const i18n: I18n = Webpack.getByKeys("getLocale");
     const formatter = new Intl.DateTimeFormat(i18n.getLocale(), {
@@ -23,7 +24,7 @@ export default function showChangelog(manifest: Manifest) {
             <h1>What's New - {manifest.name}</h1>
             <div>{formatter.format(new Date(manifest.changelogDate))} - v{manifest.version}</div>
         </div>
-    )
+    );
 
     const items = manifest.changelog.map(item => (
         <div className="Changelog-Item">

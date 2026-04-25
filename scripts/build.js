@@ -14,6 +14,10 @@ const { js: jsBeautify } = require("js-beautify");
 
 const NO_PLUGIN_FOLDERS = [".github", "archive", "common", "scripts"];
 
+const tsconfigPath = path.resolve(process.cwd(), "tsconfig.json");
+const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, "utf8"));
+const tsPaths = tsconfig.compilerOptions?.paths || {};
+
 let argv = parseArgs({
     args: process.argv.slice(2),
     allowPositionals: true,
@@ -57,6 +61,35 @@ if (!argv.plugins.length) {
     process.exit(0);
 }
 
+const tsPathAliasResolver = tsPaths => {
+    const aliases = Object.entries(tsPaths).map(([pattern, mappings]) => ({
+        pattern: pattern.replace("/*", ""),
+        mapping: mappings[0].replace("/*", "")
+    }));
+
+    return {
+        name: "TS Path Alias Resolver",
+        resolveId(id) {
+            for (const { pattern, mapping } of aliases) {
+                if (id.startsWith(pattern + "/")) {
+                    const suffix = id.slice(pattern.length + 1);
+                    const resolved = path.resolve(process.cwd(), mapping, suffix);
+                    if (fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) {
+                        const extensions = [".ts", ".tsx", ".js", ".jsx"];
+                        for (const ext of extensions) {
+                            const indexFile = path.join(resolved, `index${ext}`);
+                            if (fs.existsSync(indexFile)) {
+                                return indexFile;
+                            }
+                        }
+                    }
+                    return resolved;
+                }
+            }
+        }
+    };
+};
+
 function makeMeta(manifest) {
     manifest.author ??= manifest.authors.map(e => e.name).join(", ");
 
@@ -66,7 +99,7 @@ function makeMeta(manifest) {
             typeof manifest[key] === "string"
                 ? str + ` * @${key} ${manifest[key]}\n`
                 : str
-            , "/**\n") + " */\n\n";
+        , "/**\n") + " */\n\n";
 }
 
 const styleLoader = `
@@ -83,7 +116,9 @@ export default {
 }`;
 
 const matchAll = ({ regex, input, parent = false, flat = false }) => {
-    let matches, output = [], lastIndex = 0;
+    const output = [];
+    let matches, lastIndex = 0;
+    // eslint-disable-next-line no-cond-assign
     while (matches = regex.exec(input.slice(lastIndex))) {
         if (!regex.global) lastIndex += matches.index + matches[0].length;
         if (parent) output.push(matches);
@@ -94,7 +129,7 @@ const matchAll = ({ regex, input, parent = false, flat = false }) => {
         }
     }
     return output;
-}
+};
 
 const virtual = files => ({
     name: "Virtual Files",
@@ -139,7 +174,7 @@ const buildPlugin = (pluginFolder, makeFolder) => {
     const manifest = require(manifestPath);
     if (manifest.dependencies || manifest.devDependencies) {
         console.log(`Installing dependencies for ${pluginFolder}...`);
-        execSync('npm install', { cwd: pluginFolder, stdio: 'inherit' });
+        execSync("npm install", { cwd: pluginFolder, stdio: "inherit" });
     }
 
     const watcher = watch({
@@ -151,9 +186,17 @@ const buildPlugin = (pluginFolder, makeFolder) => {
             format: "cjs",
             exports: "auto"
         },
+        treeshake: {
+            moduleSideEffects: id => {
+                return id.endsWith(".css") || id.endsWith(".scss");
+            },
+            propertyReadSideEffects: false,
+            tryCatchDeoptimization: false
+        },
         external: require("node:module").builtinModules,
         plugins: [
             json(),
+            tsPathAliasResolver(tsPaths),
             nodeResolve({
                 extensions: [".ts", ".tsx", ".js", ".jsx", ".css", ".scss"],
                 preferBuiltins: true
@@ -170,7 +213,7 @@ const buildPlugin = (pluginFolder, makeFolder) => {
                 get "@manifest"() { return "export default " + fs.readFileSync(manifestPath, "utf8"); },
                 "@api":
                     "import manifest from \"@manifest\";" +
-                    "export const { Components, ContextMenu, Data, DOM, Logger, Net, Patcher, Plugins, ReactUtils, Themes, UI, Utils, Webpack } = new BdApi(manifest.name);",
+                    "export const { Commands, Components, ContextMenu, Data, DOM, Hooks, Logger, Net, Patcher, Plugins, ReactUtils, Themes, UI, Utils, Webpack } = new BdApi(manifest.name);",
             }),
             {
                 name: "StyleSheet Loader",
@@ -203,7 +246,7 @@ const buildPlugin = (pluginFolder, makeFolder) => {
 
                     const filePath = path.normalize(
                         path.relative(pluginFolder, id)
-                        .replaceAll("\\", "\\\\")
+                            .replaceAll("\\", "\\\\")
                     );
 
                     return "import Styles from \"@styles\";" +
@@ -217,12 +260,12 @@ const buildPlugin = (pluginFolder, makeFolder) => {
                 transform(code, id) {
                     const isRealPath = fs.existsSync(id);
                     const relativePath = isRealPath ? path.relative(pluginFolder, id) : id;
-            
+
                     return `/* ${relativePath} */\n${code}\n\n\n`;
                 }
             }
         ],
-    })
+    });
 
     watcher.on("event", async event => {
         switch (event.code) {
@@ -251,14 +294,13 @@ const buildPlugin = (pluginFolder, makeFolder) => {
                     fs.mkdirSync(folder);
                 }
 
-                const folderName = manifest.name === "APlatformIndicators" ? "PlatformIndicators" : manifest.name;
                 if (makeFolder) {
-                    const folder = path.resolve(process.cwd(), "builds", folderName);
+                    const folder = path.resolve(process.cwd(), "builds", manifest.name);
                     if (!fs.existsSync(folder)) fs.mkdirSync(folder);
-                    if (fs.existsSync(path.resolve(folderName, "README.md")))
-                        fs.copyFileSync(path.resolve(folderName, "README.md"), path.resolve(folder, "README.md"));
+                    if (fs.existsSync(path.resolve(manifest.name, "README.md")))
+                        fs.copyFileSync(path.resolve(manifest.name, "README.md"), path.resolve(folder, "README.md"));
                 }
-                const outfile = makeFolder ? path.resolve(process.cwd(), "builds", folderName, `${manifest.name}.plugin.js`) : path.resolve(process.cwd(), "builds", `${manifest.name}.plugin.js`);
+                const outfile = makeFolder ? path.resolve(process.cwd(), "builds", manifest.name, `${manifest.name}.plugin.js`) : path.resolve(process.cwd(), "builds", `${manifest.name}.plugin.js`);
 
                 fs.writeFileSync(outfile, contents, "utf8");
 
@@ -290,7 +332,7 @@ const buildPlugin = (pluginFolder, makeFolder) => {
             } break;
         }
     });
-}
+};
 
 argv.plugins
     .forEach(p => buildPlugin(p, argv.publish));

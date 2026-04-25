@@ -1,10 +1,15 @@
 {
     "compilerOptions": {
-        "jsx": "preserve",
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
         "esModuleInterop": true,
-        "typeRoots": ["./node_modules/@types", "./modules.d.ts"]
+        "jsx": "preserve",
+        "module": "ESNext",
+        "target": "ESNext",
+        "typeRoots": [
+            "./node_modules/@types",
+            "./modules.d.ts"
+        ],
+        "paths": {
+            "@common/*": ["./common/*"]
+        }
     }
 }
