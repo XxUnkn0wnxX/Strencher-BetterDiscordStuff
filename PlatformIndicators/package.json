@@ -1,6 +1,7 @@
 {
+  "$schema": "../common/Schemas/manifest.schema.json",
   "name": "APlatformIndicators",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "author": "Strencher",
   "authorId": "415849376598982656",
   "description": "Adds indicators for every platform that the user is using.",
@@ -13,15 +14,8 @@
       "items": [
         "Fixed for the latest Discord update"
       ]
-    },
-    {
-      "title": "New Indicator",
-      "type": "added",
-      "items": [
-        "Added support for VR"
-      ]
     }
   ],
-  "changelogDate": "2026-02-23"
+  "changelogDate": "2026-04-27"
 }
 
