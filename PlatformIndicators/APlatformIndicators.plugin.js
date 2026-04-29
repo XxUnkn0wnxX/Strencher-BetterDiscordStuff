@@ -1,4 +1,5 @@
 /**
+ * @$schema ../common/Schemas/manifest.schema.json
  * @name APlatformIndicators
  * @version 1.6.2
  * @author Strencher
@@ -6,13 +7,14 @@
  * @description Adds indicators for every platform that the user is using.
  * @source https://github.com/Strencher/BetterDiscordStuff/blob/master/PlatformIndicators/APlatformIndicators.plugin.js
  * @invite gvA2ree
- * @changelogDate 2026-04-26
+ * @changelogDate 2026-04-27
  */
 
 'use strict';
 
 /* @manifest */
 const manifest = {
+    "$schema": "../common/Schemas/manifest.schema.json",
     "name": "APlatformIndicators",
     "version": "1.6.2",
     "author": "Strencher",
@@ -24,10 +26,10 @@ const manifest = {
         "title": "Fixed",
         "type": "fixed",
         "items": [
-            "Prevent startup errors when the DM list or friend list modules load later during Discord launch"
+            "Fixed for the latest Discord update"
         ]
     }],
-    "changelogDate": "2026-04-26"
+    "changelogDate": "2026-04-27"
 };
 
 /* @api */
@@ -120,6 +122,9 @@ Styles$2.sheets.push("/* ../common/Changelog/style.scss */", `.Changelog-Title-W
   color: var(--background-accent);
 }`);
 
+/* react */
+var React = BdApi.React;
+
 /* ../common/Changelog/index.tsx */
 function showChangelog(manifest) {
     if (Data.load("lastVersion") === manifest.version) return;
@@ -148,15 +153,33 @@ function showChangelog(manifest) {
     Data.save("lastVersion", manifest.version);
 }
 
+/* ../common/Settings/store.ts */
+const Dispatcher = Webpack.getByKeys("dispatch", "subscribe", {
+    searchExports: true
+});
+const Flux = Webpack.getByKeys("Store");
+const Settings = new class Settings2 extends Flux.Store {
+    constructor() {
+        super(Dispatcher, {});
+    }
+    _settings = Data.load("settings") ?? {};
+    get(key, def = null) {
+        return this._settings[key] ?? def;
+    }
+    set(key, value) {
+        this._settings[key] = value;
+        Data.save("settings", this._settings);
+        this.emitChange();
+    }
+}();
+
 /* modules/shared.js */
 const LocalActivityStore = Webpack.getStore("LocalActivityStore");
 const SessionsStore = Webpack.getStore("SessionsStore");
 const UserStore = Webpack.getStore("UserStore");
 const PresenceStore = Webpack.getStore("PresenceStore");
 Webpack.getByKeys("useSyncExternalStore");
-const useStateFromStores = Hooks.useStateFromStores;
-const Dispatcher = UserStore._dispatcher;
-const Flux = Webpack.getByKeys("Store");
+Webpack.getByKeys("Store");
 const StatusTypes = Webpack.getModule((x) => x.DND && x.OFFLINE, {
     searchExports: true
 });
@@ -188,28 +211,12 @@ const buildClassName = (...args) => {
     }, []).join(" ");
 };
 
-/* modules/settings.js */
-const Settings = new class Settings2 extends Flux.Store {
-    constructor() {
-        super(Dispatcher, {});
-    }
-    _settings = Data.load("settings") ?? {};
-    get(key, def) {
-        return this._settings[key] ?? def;
-    }
-    set(key, value) {
-        this._settings[key] = value;
-        Data.save("settings", this._settings);
-        this.emitChange();
-    }
-}();
-
 /* modules/usePlatformStores.js */
 const isStreaming = () => LocalActivityStore.getActivities().some((e) => e.type === 1);
 
 function usePlatformStores(userId, type) {
-    const user = useStateFromStores([UserStore], () => UserStore.getUser(userId));
-    const sessions = useStateFromStores([SessionsStore], () => SessionsStore.getSessions());
+    const user = Hooks.useStateFromStores([UserStore], () => UserStore.getUser(userId));
+    const sessions = Hooks.useStateFromStores([SessionsStore], () => SessionsStore.getSessions());
     const iconStates = Settings.get("icons", {});
     const shownInArea = Settings.get("showIn" + type, true);
     const ignoreBots = Settings.get("ignoreBots", true) && (user?.bot ?? false);
@@ -240,10 +247,7 @@ function usePlatformStores(userId, type) {
 const findInReactTree = (tree, filter) => Utils.findInTree(tree, filter, {
     walkable: ["props", "children", "type"]
 });
-
-function upperFirst(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
+const upperFirst = (string) => string.charAt(0).toUpperCase() + string.slice(1);
 
 function getStatusText(key, status) {
     return (key === "vr" ? "VR" : upperFirst(key)) + ": " + Messages[`STATUS_${(status === "mobile" ? "mobile_online" : status).toUpperCase()}`];
@@ -252,18 +256,18 @@ function getStatusText(key, status) {
 function getStatusColor(status) {
     switch (status) {
         case StatusTypes.ONLINE:
-            return Colors.GREEN_360;
+            return Colors.GREEN_360.css;
         case StatusTypes.IDLE:
-            return Colors.YELLOW_300;
+            return Colors.YELLOW_300.css;
         case StatusTypes.DND:
-            return Colors.RED_400;
+            return Colors.RED_400.css;
         case StatusTypes.STREAMING:
-            return Colors.TWITCH;
+            return Colors.TWITCH.css;
         case StatusTypes.INVISIBLE:
         case StatusTypes.UNKNOWN:
         case StatusTypes.OFFLINE:
         default:
-            return Colors.PRIMARY_400;
+            return Colors.PRIMARY_400.css;
     }
 }
 
@@ -562,8 +566,8 @@ Styles$2.sheets.push("/* components/settings.scss */", `.PIsettingsSmartDisable 
 }
 .PIsettingsSmartDisable .body {
   display: grid;
-  grid-template-columns: 160px 160px;
-  grid-template-rows: auto auto;
+  grid-template-columns: 160px 160px 160px;
+  grid-template-rows: auto auto auto;
   column-gap: 15px;
   row-gap: 15px;
 }
@@ -599,7 +603,7 @@ const {
 } = Components;
 
 function SwitchItem(props) {
-    const value = useStateFromStores([Settings], () => Settings.get(props.id, props.value));
+    const value = Hooks.useStateFromStores([Settings], () => Settings.get(props.id, props.value));
     return React.createElement(
         SettingItem, {
             ...props,
@@ -691,25 +695,12 @@ class PlatformIndicators {
         this.patchBadges();
         this.patchFriendList();
     }
-    queueDMListPatchRetry() {
-        if (this.dmListPatched || this.dmListRetryTimer) return;
-        this.dmListRetryTimer = setTimeout(() => {
-            this.dmListRetryTimer = null;
-            this.patchDMList();
-        }, 1500);
-    }
-    patchDMList() {
+    async patchDMList() {
         const UserContext = React.createContext(null);
-        const ChannelWrapper = Webpack.getBySource("activities", "isMultiUserDM", "isMobile");
-        const NameWrapper = Webpack.getBySource("AvatarWithText")?.A;
-        const ChannelClasses = Webpack.getByKeys("channel", "decorator");
-        const channelWrapperKey = typeof ChannelWrapper?.Ay === "function" ? "Ay" : null;
-        if (!channelWrapperKey || typeof NameWrapper?.render !== "function") {
-            this.queueDMListPatchRetry();
-            return;
-        }
-        this.dmListPatched = true;
-        Patcher.after(ChannelWrapper, channelWrapperKey, (_, __, res) => {
+        const ChannelWrapper = await Webpack.waitForModule(Webpack.Filters.bySource('location:"PrivateChannel",', "isMobile"));
+        const NameWrapper = (await Webpack.waitForModule(Webpack.Filters.bySource("AvatarWithText"))).A;
+        const ChannelClasses = await Webpack.waitForModule(Webpack.Filters.byKeys("channel", "decorator"));
+        Patcher.after(ChannelWrapper, "Ay", (_, __, res) => {
             if (!Settings.get("showInDmsList", true)) return;
             if (!res || typeof res.type !== "function") return;
             Patcher.after(res, "type", (_2, [props], res2) => {
@@ -746,8 +737,10 @@ class PlatformIndicators {
             );
         });
     }
-    patchMemberList() {
-        const [MemberItem, key] = Webpack.getWithKey(Webpack.Filters.byStrings("nameplate:", ".MEMBER_LIST"));
+    async patchMemberList() {
+        const [MemberItem, key] = Webpack.getWithKey(() => true, {
+            target: await Webpack.waitForModule(Webpack.Filters.bySource("nameplate:", ".MEMBER_LIST", "listitem"))
+        });
         Patcher.after(MemberItem, key, (_, [props], ret) => {
             const user = props.avatar.props.user;
             if (ret?.props?.className?.includes("placeholder")) return;
@@ -767,8 +760,10 @@ class PlatformIndicators {
             }
         });
     }
-    patchChat() {
-        const [ChatUsername, key] = Webpack.getWithKey(Webpack.Filters.byStrings(".guildMemberAvatar&&null!="));
+    async patchChat() {
+        const [ChatUsername, key] = Webpack.getWithKey(() => true, {
+            target: await Webpack.waitForModule(Webpack.Filters.bySource(".guildMemberAvatar&&null!="))
+        });
         Patcher.before(ChatUsername, key, (_, props) => {
             const mainProps = props[0];
             if (!Settings.get("showInChat", true)) return;
@@ -786,8 +781,10 @@ class PlatformIndicators {
             );
         });
     }
-    patchBadges() {
-        const [BadgeList, Key_BL] = Webpack.getWithKey(Webpack.Filters.byStrings("badges", "badgeClassName", ".BADGE"));
+    async patchBadges() {
+        const [BadgeList, Key_BL] = Webpack.getWithKey(() => true, {
+            target: await Webpack.waitForModule(Webpack.Filters.bySource("badges", "badgeClassName", ".BADGE"))
+        });
         Patcher.after(BadgeList, Key_BL, (_, [{
             displayProfile
         }], res) => {
@@ -805,14 +802,11 @@ class PlatformIndicators {
             );
         });
     }
-    queueFriendListPatchRetry() {
-        if (this.friendListPatched || this.friendListRetryTimer) return;
-        this.friendListRetryTimer = setTimeout(() => {
-            this.friendListRetryTimer = null;
-            this.patchFriendList();
-        }, 1500);
-    }
-    patchFriendList() {
+    async patchFriendList() {
+        const [UserInfo, key] = Webpack.getWithKey(() => true, {
+            target: await Webpack.waitForModule(Webpack.Filters.bySource("user", "showAccountIdentifier", "overrideDiscriminator"))
+        });
+        const FriendListClasses = await Webpack.waitForModule(Webpack.Filters.byKeys("userInfo", "hovered"));
         if (!Settings.get("showInFriendsList", true)) return;
         const UserInfo = Webpack.getBySource("user", "subText", "showAccountIdentifier")?.A;
         const FriendListClasses = Webpack.getByKeys("userInfo", "hovered");
@@ -825,33 +819,18 @@ class PlatformIndicators {
             .${FriendListClasses.discriminator} { display: none; }
             .${FriendListClasses.hovered} .${FriendListClasses.discriminator} { display: unset; }
         `);
-        const unpatch = Patcher.after(UserInfo.prototype, "render", (_, __, res) => {
-            unpatch();
-            if (!res?.type?.prototype) return;
-            Patcher.after(res.type.prototype, "render", (_2, __2, res2) => {
-                if (!res2 || typeof res2.type !== "function") return;
-                const unpatch2 = Patcher.after(res2, "type", (_3, __3, res3) => {
-                    unpatch2();
-                    const child = Utils.findInTree(res3, (e) => e?.className?.includes("listItemContents"), {
-                        walkable: ["children", "props"]
-                    });
-                    if (!child) return;
-                    const userId = findInReactTree(res3, (e) => e?.user)?.user?.id;
-                    if (!userId) return;
-                    if (!child.children?.[0] || typeof child.children[0].type !== "function") return;
-                    const unpatch3 = Patcher.after(child.children[0], "type", (_4, __4, res4) => {
-                        unpatch3();
-                        if (!res4?.props?.children) return;
-                        res4.props.children.push(
-                            React.createElement(
-                                StatusIndicators, {
-                                    userId,
-                                    type: "FriendList"
-                                }
-                            )
-                        );
-                    });
-                });
+        Patcher.after(UserInfo, key, (_, [{
+            user
+        }], res) => {
+            Patcher.after(res, "type", (_2, __, res2) => {
+                res2.props.children.push(
+                    React.createElement(
+                        StatusIndicators, {
+                            userId: user.id,
+                            type: "FriendList"
+                        }
+                    )
+                );
             });
         });
     }
