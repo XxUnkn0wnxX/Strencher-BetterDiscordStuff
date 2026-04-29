@@ -58,9 +58,6 @@ var Styles$2 = {
     }
 };
 
-/* react */
-var React = BdApi.React;
-
 /* ../common/Changelog/style.scss */
 Styles$2.sheets.push("/* ../common/Changelog/style.scss */", `.Changelog-Title-Wrapper {
   font-size: 20px;
@@ -702,7 +699,6 @@ class PlatformIndicators {
         const ChannelClasses = await Webpack.waitForModule(Webpack.Filters.byKeys("channel", "decorator"));
         Patcher.after(ChannelWrapper, "Ay", (_, __, res) => {
             if (!Settings.get("showInDmsList", true)) return;
-            if (!res || typeof res.type !== "function") return;
             Patcher.after(res, "type", (_2, [props], res2) => {
                 if (!props.user) return;
                 if (Settings.get("ignoreBots", true) && props.user.bot) return;
@@ -808,13 +804,6 @@ class PlatformIndicators {
         });
         const FriendListClasses = await Webpack.waitForModule(Webpack.Filters.byKeys("userInfo", "hovered"));
         if (!Settings.get("showInFriendsList", true)) return;
-        const UserInfo = Webpack.getBySource("user", "subText", "showAccountIdentifier")?.A;
-        const FriendListClasses = Webpack.getByKeys("userInfo", "hovered");
-        if (typeof UserInfo !== "function" || !FriendListClasses?.discriminator || !FriendListClasses?.hovered) {
-            this.queueFriendListPatchRetry();
-            return;
-        }
-        this.friendListPatched = true;
         DOM.addStyle("PlatformIndicators", `
             .${FriendListClasses.discriminator} { display: none; }
             .${FriendListClasses.hovered} .${FriendListClasses.discriminator} { display: unset; }
