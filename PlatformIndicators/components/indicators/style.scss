@@ -1,0 +1,46 @@
+.indicatorContainer {
+    display: inline-flex;
+    vertical-align: bottom;
+    margin-left: 5px;
+
+    svg {
+        margin-left: -2px;
+    }
+
+    div:first-child svg {
+        margin-left: 2px;
+    }
+
+    &.type_Chat {
+        margin-right: -6px;
+        margin-top: 2px;
+        vertical-align: top;
+    }
+
+    &.type_FriendList {
+        align-self: center;
+        margin-left: 12px;
+
+        svg {
+            height: 22px;
+            width: 22px;
+        }
+    }
+}
+
+.PI-icon_mobile {
+    position: relative;
+    top: 1px;
+}
+
+.badge_separator {
+    margin-right: 2px;
+    padding-right: 2px;
+    border-right: thin solid var(--background-modifier-hover);
+    height: 14px;
+}
+
+div[id*="message-reply"] .indicatorContainer.type_Chat {
+    margin-left: 0;
+    margin-right: 2px;
+}

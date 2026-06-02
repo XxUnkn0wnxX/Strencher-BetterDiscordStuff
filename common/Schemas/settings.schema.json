@@ -14,6 +14,25 @@
                 "oneOf": [
                     {
                         "type": "object",
+                        "description": "Custom setting type. Requires a component registered in SettingsPanel's `components` prop — if no matching component is found, this item will be silently ignored.",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "not": { "enum": ["switch", "dropdown", "slider"] },
+                                "description": "Custom type identifier. Must be registered via SettingsPanel's `components` prop."
+                            },
+                            "name": { "type": "string", "description": "The display name of the setting" },
+                            "note": {
+                                "type": "string",
+                                "description": "Optional help text or description for the setting"
+                            },
+                            "id": { "type": "string", "description": "Unique identifier for the setting" }
+                        },
+                        "required": ["type", "name", "id"],
+                        "additionalProperties": true
+                    },
+                    {
+                        "type": "object",
                         "description": "A switch/toggle setting",
                         "properties": {
                             "type": {
@@ -37,12 +56,7 @@
                                 "description": "The default boolean value for the switch"
                             }
                         },
-                        "required": [
-                            "type",
-                            "name",
-                            "id",
-                            "value"
-                        ],
+                        "required": ["type", "name", "id", "value"],
                         "additionalProperties": false
                     },
                     {
@@ -87,10 +101,7 @@
                                                     "description": "Value of the option"
                                                 }
                                             },
-                                            "required": [
-                                                "label",
-                                                "value"
-                                            ],
+                                            "required": ["label", "value"],
                                             "additionalProperties": false
                                         }
                                     },
@@ -104,13 +115,7 @@
                                 ]
                             }
                         },
-                        "required": [
-                            "type",
-                            "name",
-                            "id",
-                            "value",
-                            "options"
-                        ],
+                        "required": ["type", "name", "id", "value", "options"],
                         "additionalProperties": false
                     },
                     {
@@ -161,24 +166,13 @@
                                 "description": "Whether the slider should snap to markers"
                             }
                         },
-                        "required": [
-                            "type",
-                            "name",
-                            "id",
-                            "minValue",
-                            "maxValue"
-                        ],
-                        "anyOf": [
-                            { "required": ["value"] },
-                            { "required": ["defaultValue"] }
-                        ],
+                        "required": ["type", "name", "id", "minValue", "maxValue"],
+                        "anyOf": [{ "required": ["value"] }, { "required": ["defaultValue"] }],
                         "additionalProperties": false
                     }
                 ]
             }
         }
     },
-    "required": [
-        "items"
-    ]
+    "required": ["items"]
 }
