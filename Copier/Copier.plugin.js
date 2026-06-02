@@ -6,7 +6,6 @@
  * @description Allows you to copy certain stuff with custom options.
  * @source https://github.com/Strencher/BetterDiscordStuff/blob/master/Copier/Copier.plugin.js
  * @invite gvA2ree
- * @changelogDate 2026-01-26
  */
 
 'use strict';
@@ -101,13 +100,13 @@ Styles.sheets.push("/* changelog.css */", `.copier-changelog-item {
 }
 
 .item-changelog-added .copier-changelog-header {
-    color: #45BA6A;
+    color: #45ba6a;
 }
 .item-changelog-fixed .copier-changelog-header {
-    color: #EC4245;
+    color: #ec4245;
 }
 .item-changelog-improved .copier-changelog-header {
-    color: #5865F2;
+    color: #5865f2;
 }
 
 .copier-changelog-header::after {
@@ -181,16 +180,16 @@ Styles.sheets.push("/* ../common/Changelog/style.scss */", `.Changelog-Title-Wra
   margin-bottom: 10px;
 }
 .Changelog-Item .Changelog-Header.added {
-  color: #45BA6A;
+  color: #45ba6a;
 }
 .Changelog-Item .Changelog-Header.changed {
-  color: #F0B232;
+  color: #f0b232;
 }
 .Changelog-Item .Changelog-Header.fixed {
-  color: #EC4245;
+  color: #ec4245;
 }
 .Changelog-Item .Changelog-Header.improved {
-  color: #5865F2;
+  color: #5865f2;
 }
 .Changelog-Item .Changelog-Header::after {
   content: "";
@@ -226,12 +225,10 @@ function showChangelog(manifest) {
     }, React.createElement("h4", {
         className: `Changelog-Header ${item.type}`
     }, item.title), item.items.map((item2) => React.createElement("span", null, item2))));
-    "changelogImage" in manifest && items.unshift(
-        React.createElement("img", {
-            className: "Changelog-Banner",
-            src: manifest.changelogImage
-        })
-    );
+    "changelogImage" in manifest && items.unshift(React.createElement("img", {
+        className: "Changelog-Banner",
+        src: manifest.changelogImage
+    }));
     UI.alert(title, items);
     Data.save("lastVersion", manifest.version);
 }
@@ -296,15 +293,17 @@ class Formatter {
 const Settings = {
     _listeners: new Set(),
     _settings: Object.assign({}, {
-        messageCustom: "`$author` **$timestamp**\n> $message",
-        channelCustom: "#$name in **$server**",
-        categoryCustom: "$name with $channelsCount channels",
-        voiceCustom: "**#$name** in **$server** with `$usersConnected` connected users.",
-        guildCustom: "**$name** with `$members`",
-        userCustom: "**$name** - Created at: `$creation`",
-        roleCustom: "**$name** - `$colorHEX`",
-        showButton: true
-    }, Data.load("settings")),
+            messageCustom: "`$author` **$timestamp**\n> $message",
+            channelCustom: "#$name in **$server**",
+            categoryCustom: "$name with $channelsCount channels",
+            voiceCustom: "**#$name** in **$server** with `$usersConnected` connected users.",
+            guildCustom: "**$name** with `$members`",
+            userCustom: "**$name** - Created at: `$creation`",
+            roleCustom: "**$name** - `$colorHEX`",
+            showButton: true
+        },
+        Data.load("settings")
+    ),
     addReactChangeListener(listener) {
         Settings._listeners.add(listener);
     },
@@ -374,9 +373,7 @@ function useKeyState() {
     const [active, setActive] = React.useState("none");
     React.useEffect(() => {
         const handleChange = (e) => {
-            setActive(
-                e.ctrlKey && e.shiftKey ? "both" : e.ctrlKey ? "ctrl" : e.shiftKey ? "shift" : "none"
-            );
+            setActive(e.ctrlKey && e.shiftKey ? "both" : e.ctrlKey ? "ctrl" : e.shiftKey ? "shift" : "none");
         };
         window.addEventListener("keydown", handleChange);
         window.addEventListener("keyup", handleChange);
@@ -407,11 +404,9 @@ function findGroupById(res, id) {
     if (!res) return null;
     let children = res?.props?.children;
     if (!children) return null;
-    if (!Array.isArray(children))
-        children = [children];
-    if (children.some(
-            (child) => child && typeof child === "object" && "props" in child && child.props.id === id
-        )) return res;
+    if (!Array.isArray(children)) children = [children];
+    if (children.some((child) => child && typeof child === "object" && "props" in child && child.props.id === id))
+        return res;
     for (const child of children)
         if (child && typeof child === "object") {
             const found = findGroupById(child, id);
@@ -431,9 +426,12 @@ const getByProps = (...props) => {
     return Webpack.getModule(Filters.byKeys(...props));
 };
 const getBulk = (...queries) => {
-    return Webpack.getBulk.apply(null, queries.map((q) => typeof q === "function" ? {
-        filter: q
-    } : q));
+    return Webpack.getBulk.apply(
+        null,
+        queries.map((q) => typeof q === "function" ? {
+            filter: q
+        } : q)
+    );
 };
 const getByPrototypeFields = (...fields) => {
     return Webpack.getModule(Filters.byPrototypeFields(...fields));
@@ -447,7 +445,7 @@ const getMangled = function*(filter, target = null) {
     });
     yield target && Object.keys(target).find((k) => filter(target[k]));
 };
-const getBySource = function(sources) {
+const getBySource = (sources) => {
     const filters = Filters.combine(...sources.map((x) => Filters.bySource(x)));
     return Webpack.getModule(filters);
 };
@@ -533,7 +531,7 @@ const MessageCopyOptions = [{
     }
 ];
 
-function message() {
+function patchMessageMenu() {
     return ContextMenu.patch("message", (res, props) => {
         const {
             message
@@ -542,87 +540,91 @@ function message() {
         const menuGroup = (findGroupById(res, "delete") || findGroupById(res, "report"))?.props?.children;
         const buttonIndex = menuGroup?.findIndex((i) => i?.props?.id === "delete" || i?.props?.id === "report");
         if (!menuGroup || !buttonIndex) return;
-        menuGroup.splice(buttonIndex + 1, 0, ContextMenu.buildMenuChildren([{
-                type: "separator"
-            },
-            {
-                id: "copy-message",
-                label: "Copy",
-                type: "submenu",
-                action: () => {
-                    copy(message.id);
+        menuGroup.splice(
+            buttonIndex + 1,
+            0,
+            ContextMenu.buildMenuChildren([{
+                    type: "separator"
                 },
-                items: [
-                    message.embeds.length && {
-                        label: "Copy RAW Embed",
-                        id: "copy-embed-raw",
-                        action: () => {
-                            copy(JSON.stringify(message.embeds[0], null, "	"));
-                            UI.showToast("Copied raw embed.", {
-                                type: "success"
-                            });
-                        }
+                {
+                    id: "copy-message",
+                    label: "Copy",
+                    type: "submenu",
+                    action: () => {
+                        copy(message.id);
                     },
-                    {
-                        label: "RAW Content",
-                        id: "copy-message-raw",
-                        action: () => {
-                            copy(message.content);
-                            UI.showToast("Copied raw message content.", {
-                                type: "success"
-                            });
-                        }
-                    },
-                    {
-                        label: "Custom Format",
-                        id: "copy-message-custom-format",
-                        action: () => {
-                            copy(
-                                Formatter.formatString(
-                                    Settings.get("messageCustom"),
-                                    MessageCopyOptions.reduce((options, option) => {
-                                        options[option.name] = option.getValue({
-                                            message
-                                        });
-                                        return options;
-                                    }, {})
-                                )
-                            );
-                            UI.showToast("Copied message with custom format.", {
-                                type: "success"
-                            });
-                        }
-                    },
-                    {
-                        label: "Message Link",
-                        id: "copy-message-link",
-                        action: () => {
-                            const channel = ChannelStore.getChannel(message.channel_id);
-                            if (!channel) {
-                                console.error("Failed to copy message link!\n", "Message channel cannot be found!");
-                                return UI.showToast("Failed to copy message link!", {
-                                    type: "error"
+                    items: [
+                        message.embeds.length && {
+                            label: "Copy RAW Embed",
+                            id: "copy-embed-raw",
+                            action: () => {
+                                copy(JSON.stringify(message.embeds[0], null, "	"));
+                                UI.showToast("Copied raw embed.", {
+                                    type: "success"
                                 });
                             }
-                            copy(getMessageLink(channel.guild_id, channel.id, message.id));
-                            UI.showToast("Copied message link.", {
-                                type: "success"
-                            });
+                        },
+                        {
+                            label: "RAW Content",
+                            id: "copy-message-raw",
+                            action: () => {
+                                copy(message.content);
+                                UI.showToast("Copied raw message content.", {
+                                    type: "success"
+                                });
+                            }
+                        },
+                        {
+                            label: "Custom Format",
+                            id: "copy-message-custom-format",
+                            action: () => {
+                                copy(
+                                    Formatter.formatString(
+                                        Settings.get("messageCustom"),
+                                        MessageCopyOptions.reduce((options, option) => {
+                                            options[option.name] = option.getValue({
+                                                message
+                                            });
+                                            return options;
+                                        }, {})
+                                    )
+                                );
+                                UI.showToast("Copied message with custom format.", {
+                                    type: "success"
+                                });
+                            }
+                        },
+                        {
+                            label: "Message Link",
+                            id: "copy-message-link",
+                            action: () => {
+                                const channel = ChannelStore.getChannel(message.channel_id);
+                                if (!channel) {
+                                    console.error("Failed to copy message link!\n", "Message channel cannot be found!");
+                                    return UI.showToast("Failed to copy message link!", {
+                                        type: "error"
+                                    });
+                                }
+                                copy(getMessageLink(channel.guild_id, channel.id, message.id));
+                                UI.showToast("Copied message link.", {
+                                    type: "success"
+                                });
+                            }
+                        },
+                        {
+                            label: "MessageId",
+                            id: "copy-message-id",
+                            action: () => {
+                                copy(message.id);
+                                UI.showToast("Copied message id.", {
+                                    type: "success"
+                                });
+                            }
                         }
-                    },
-                    {
-                        label: "MessageId",
-                        id: "copy-message-id",
-                        action: () => {
-                            copy(message.id);
-                            UI.showToast("Copied message id.", {
-                                type: "success"
-                            });
-                        }
-                    }
-                ].filter(Boolean)
-            }
-        ]));
+                    ].filter(Boolean)
+                }
+            ])
+        );
     });
 }
 
@@ -633,10 +635,12 @@ function CopyIcon(props) {
         width: "24",
         viewBox: "0 0 24 24",
         ...props
-    }, React.createElement("path", {
-        fill: props.fill ?? "currentColor",
-        d: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
-    }));
+    }, React.createElement(
+        "path", {
+            fill: props.fill ?? "currentColor",
+            d: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+        }
+    ));
 }
 
 /* components/copybutton.jsx */
@@ -874,13 +878,15 @@ const ChannelCategoryCopyOptions = [{
         getValue: ({
             channel
         }) => {
-            const channels = Object.values(GuildChannelStore.getSelectableChannels(channel.guild_id)).filter((child) => child.parent_id === channel.id);
+            const channels = Object.values(GuildChannelStore.getSelectableChannels(channel.guild_id)).filter(
+                (child) => child.parent_id === channel.id
+            );
             return channels.length;
         },
         description: "Will be replaced with the children channels count of that category."
     }
 ];
-const buildTextChannelMenu = function(channel) {
+const buildTextChannelMenu = (channel) => {
     const guild = GuildStore.getGuild(channel.guild_id);
     return ContextMenu.buildMenuChildren([{
             type: "separator"
@@ -947,7 +953,7 @@ const buildTextChannelMenu = function(channel) {
         }
     ]);
 };
-const buildVoiceChannelMenu = function(channel) {
+const buildVoiceChannelMenu = (channel) => {
     const guild = GuildStore.getGuild(channel.guild_id);
     return ContextMenu.buildMenuChildren([{
             type: "separator"
@@ -1014,7 +1020,7 @@ const buildVoiceChannelMenu = function(channel) {
         }
     ]);
 };
-const buildCategoryMenu = function(channel) {
+const buildCategoryMenu = (channel) => {
     const guild = GuildStore.getGuild(channel.guild_id);
     return ContextMenu.buildMenuChildren([{
             type: "separator"
@@ -1072,7 +1078,7 @@ const buildCategoryMenu = function(channel) {
     ]);
 };
 
-function channel() {
+function patchChannelMenu() {
     const builders = {
         [ChannelTypes.GUILD_STAGE_VOICE]: buildVoiceChannelMenu,
         [ChannelTypes.GUILD_CATEGORY]: buildCategoryMenu,
@@ -1147,7 +1153,7 @@ const RoleCopyOptions = [{
     }
 ];
 
-function dev() {
+function patchDevMenu() {
     const patches = new Set([]);
     const patch = (res, props) => {
         const handleClose = () => res?.props?.onClose();
@@ -1306,7 +1312,7 @@ const GuildCopyOptions = [{
     }
 ];
 
-function guild() {
+function patchGuildMenu() {
     return ContextMenu.patch("guild-context", (res, props) => {
         const {
             guild
@@ -1410,7 +1416,7 @@ const UserCopyOptions = [{
     }
 ];
 
-function user() {
+function patchUserMenu() {
     const patches = new Set();
     const buildMenu = (user, isDM = false) => ContextMenu.buildMenuChildren([{
             type: "separator"
@@ -1440,9 +1446,7 @@ function user() {
                             options2[option.name] = option.getValue(user);
                             return options2;
                         }, {});
-                        copy(
-                            Formatter.formatString(Settings.get("userCustom"), options)
-                        );
+                        copy(Formatter.formatString(Settings.get("userCustom"), options));
                         UI.showToast("Copied user with custom format.", {
                             type: "success"
                         });
@@ -1481,11 +1485,13 @@ function user() {
             ].filter(Boolean)
         }
     ]);
-    patches.add(ContextMenu.patch("user-context", (res, props) => {
-        const tree = res?.props?.children;
-        if (!Array.isArray(tree)) return console.log("Not an array.", tree);
-        tree.splice(-1, 0, buildMenu(props.user, !!props.channel));
-    }));
+    patches.add(
+        ContextMenu.patch("user-context", (res, props) => {
+            const tree = res?.props?.children;
+            if (!Array.isArray(tree)) return console.log("Not an array.", tree);
+            tree.splice(-1, 0, buildMenu(props.user, !!props.channel));
+        })
+    );
     return () => patches.forEach((p) => p());
 }
 
@@ -1548,10 +1554,12 @@ function Tune(props) {
         viewBox: "0 0 24 24",
         width: "24",
         ...props
-    }, React.createElement("path", {
-        d: "M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z",
-        fill: "currentColor"
-    }));
+    }, React.createElement(
+        "path", {
+            d: "M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z",
+            fill: "currentColor"
+        }
+    ));
 }
 
 /* components/settings/item.jsx */
@@ -1661,12 +1669,14 @@ function Replacement({
     id,
     name
 }) {
-    return React.createElement(React.Fragment, null, React.createElement(TextBox, {
-        name: "Configure",
-        onChange: (value) => Settings.set(id, value),
-        placeholder: name,
-        value: Settings.get(id)
-    }), React.createElement("div", {
+    return React.createElement(React.Fragment, null, React.createElement(
+        TextBox, {
+            name: "Configure",
+            onChange: (value) => Settings.set(id, value),
+            placeholder: name,
+            value: Settings.get(id)
+        }
+    ), React.createElement("div", {
         className: "copier-header copier-settings-name"
     }, "Available Variables:"), options.map((option) => React.createElement(Variable, {
         key: option.name,
@@ -1821,30 +1831,33 @@ function SettingsPanel() {
     const [selected, setSelected] = React.useState(null);
     return React.createElement("div", {
         className: "copier-settings-container"
-    }, settings.map((p) => React.createElement(SettingsItem, {
-        ...p,
-        key: p.id,
-        onSelect: () => setSelected(selected === p.id ? null : p.id),
-        opened: selected === p.id
-    }, React.createElement(
-        Dynamic, {
-            component: componentMap[p.type],
+    }, settings.map((p) => React.createElement(
+        SettingsItem, {
             ...p,
-            value: Settings.get(p.id),
-            onChange: (val) => Settings.set(p.id, val)
-        }
-    ))));
+            key: p.id,
+            onSelect: () => setSelected(selected === p.id ? null : p.id),
+            opened: selected === p.id
+        },
+        React.createElement(
+            Dynamic, {
+                component: componentMap[p.type],
+                ...p,
+                value: Settings.get(p.id),
+                onChange: (val) => Settings.set(p.id, val)
+            }
+        )
+    )));
 }
 
 /* menus/index.js */
 
 var ContextMenus = /*#__PURE__*/ Object.freeze({
     __proto__: null,
-    ChannelContextMenu: channel,
-    DeveloperContextMenu: dev,
-    GuildContextMenu: guild,
-    MessageContextMenu: message,
-    UserContextMenu: user
+    ChannelContextMenu: patchChannelMenu,
+    DeveloperContextMenu: patchDevMenu,
+    GuildContextMenu: patchGuildMenu,
+    MessageContextMenu: patchMessageMenu,
+    UserContextMenu: patchUserMenu
 });
 
 /* index.jsx */
@@ -1890,11 +1903,9 @@ class Copier {
             console.log(res);
             const title = findInTree(res, (e) => e?.variant && Array.isArray(e.children));
             if (!title) return res;
-            title.children.push(
-                React.createElement(CopyButton2, {
-                    onClick: () => copy(bio)
-                })
-            );
+            title.children.push(React.createElement(CopyButton2, {
+                onClick: () => copy(bio)
+            }));
         });
     }
     async patchToolbar() {
@@ -1902,17 +1913,21 @@ class Copier {
             buttons
         } = Webpack$1.getByProps("messageListItem", "buttons") ?? {};
         const buttonsContainer = await new Promise((resolve) => {
-            onceAdded("." + buttons, (node) => {
-                const instance = ReactUtils.getInternalInstance(node);
-                if (!instance) return;
-                for (let curr = instance, max = 100; curr != null && max--; curr = curr?.return) {
-                    max < 5 && console.log(curr);
-                    if ((node = curr?.memoizedProps?.children?.type) && node?.$$typeof) {
-                        resolve(node);
-                        break;
+            onceAdded(
+                "." + buttons,
+                (node) => {
+                    const instance = ReactUtils.getInternalInstance(node);
+                    if (!instance) return;
+                    for (let curr = instance, max = 100; curr != null && max--; curr = curr?.return) {
+                        max < 5 && console.log(curr);
+                        if ((node = curr?.memoizedProps?.children?.type) && node?.$$typeof) {
+                            resolve(node);
+                            break;
+                        }
                     }
-                }
-            }, this.controller.signal);
+                },
+                this.controller.signal
+            );
         });
         if (!buttonsContainer) return;
         const ToolbarButtonPatch = ({
@@ -1922,11 +1937,9 @@ class Copier {
             if (!__COP_ORIGINAL) return null;
             const res = __COP_ORIGINAL.call(null, props);
             try {
-                res?.props?.children?.unshift?.(
-                    React.createElement(CopyButton, {
-                        message: props.message
-                    })
-                );
+                res?.props?.children?.unshift?.(React.createElement(CopyButton, {
+                    message: props.message
+                }));
             } catch (error) {
                 console.error("[Copier] Fatal error:", error);
             }

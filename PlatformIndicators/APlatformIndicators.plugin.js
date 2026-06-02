@@ -823,10 +823,6 @@ class PlatformIndicators {
         return React.createElement(SettingsPanel, null);
     }
     start() {
-        this.dmListPatched = false;
-        this.dmListRetryTimer = null;
-        this.friendListPatched = false;
-        this.friendListRetryTimer = null;
         Styles$2.load();
         showChangelog(manifest);
         this.patchDMList();
@@ -852,7 +848,7 @@ class PlatformIndicators {
                 }, res2);
             });
         });
-        const ChannelWrapperElement = ChannelClasses?.channel ? document.querySelector(`h2 + .${ChannelClasses.channel}`) : null;
+        const ChannelWrapperElement = document.querySelector(`h2 + .${ChannelClasses.channel}`);
         if (ChannelWrapperElement) {
             const ChannelWrapperInstance = ReactUtils.getOwnerInstance(ChannelWrapperElement);
             if (ChannelWrapperInstance) ChannelWrapperInstance.forceUpdate();
@@ -955,8 +951,6 @@ class PlatformIndicators {
         });
     }
     stop() {
-        clearTimeout(this.dmListRetryTimer);
-        clearTimeout(this.friendListRetryTimer);
         Patcher.unpatchAll();
         DOM.removeStyle("PlatformIndicators");
         Styles$2.unload();
